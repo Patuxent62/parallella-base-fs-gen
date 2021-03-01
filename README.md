@@ -19,7 +19,7 @@ git@github.com:Patuxent62/parallella-base-fs-gen.git
 (assumes a minimum 16 GB SD card, although an 8 GB card will do)
 
 | Partition | File System | Mount Point | Label | Size | Flags |
-| :-------------: | :-------: | :-------: | :------: | :-----------: | :------: |
+| :-------------: | :-------: | :------- | :------: | :-----------: | :------: |
 | /dev/mmcblk0p1 | fat16 | /boot | BOOT | 100.0 MiB | boot |
 | /dev/mmcblk0p2 | ext4 | / |   | 14.5 GiB |   |
 
@@ -33,19 +33,11 @@ ubuntu-base-18.04.5-base-armhf.tar.gz
 ## Image components in this repo are custom patuxent-parallella versions listed below:
 
 | Component | Source Repo | Comments |
-| :----------------------------- | :--------------------------------------------- | :------------------------------------------ |
-| ADI Kernel Image | git@github.com:Patuxent62/parallella-linux.git | Based on ADI 4.19.0 |
-|   |   | with modified ephiphany driver |
-|   |   | and xilinx support |
-| devicetree.dtb | git@github.com:Patuxent62/parallella-linux.git | Updated to fix HDMI video, |
-| (devicetree-2021-01.dtb/dts) |   | sound, and misc boot issues |
-| parallella.bit.bin | git@github.com:Patuxent62/oh.git | Modified FPGA design for latest ADI |
-|(parallella_e16_ |   | HDMI IP and added support for GPIO |
-| hdmi_egpio_7010.bit.bin) |   | accessibility from epiphany cores via AXI |
-| epiphany sdk | git@github.com:Patuxent62/epiphany-sdk.git | Added extra debugging output to the SDK |
-| and toolchain |   |   |
-
-(/opt/adapteva/ filesystem branch)
+| :--------------------------------- | :--------------------------------------------- | :-------------------------------------- |
+| ADI Kernel Image | git@github.com:Patuxent62/parallella-linux.git | Based on ADI 4.19.0 with modified ephiphany driver and xilinx support |
+| devicetree.dtb (devicetree-2021-01.dtb/dts) | git@github.com:Patuxent62/parallella-linux.git | Updated to fix HDMI video, sound, and misc boot issues |
+| parallella.bit.bin (parallella_e16_hdmi_egpio_7010.bit.bin) | git@github.com:Patuxent62/oh.git | Modified FPGA design for latest ADI HDMI IP and added support for GPIO accessibility from epiphany cores via AXI |
+| epiphany sdk (/opt/adapteva/ filesystem branch) | git@github.com:Patuxent62/epiphany-sdk.git | Added extra debugging output to the SDK and toolchain |
 
 
 --------------------------------------------------
