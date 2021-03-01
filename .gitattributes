@@ -1,0 +1,2 @@
+overlays/** filter=lfs diff=lfs merge=lfs -text
+kernel-files/** filter=lfs diff=lfs merge=lfs -text

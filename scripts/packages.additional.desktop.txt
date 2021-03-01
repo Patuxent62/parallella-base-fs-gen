@@ -1,0 +1,55 @@
+#Install X
+xorg xserver-xorg-dev
+xserver-xorg-video-fbdev libdrm-dev libx11-6 libx11-dev xutils-dev
+
+### 17. Install a windows manager
+lxde lxdm
+
+# Keyboard data
+xkb-data
+xkb-data-i18n
+x11-xkb-utils
+libxkbcommon-x11-0
+
+### Sound
+alsa-base alsa-utils libasound2-plugins
+
+# Pulseaudio
+pulseaudio
+pavucontrol
+paprefs
+xmms2-plugin-pulse
+
+### "Must haves"
+tkcvs wish putty feh
+
+### Networking
+network-manager
+
+### Linux Tools
+xutils-dev
+
+### Media
+dillo firefox smplayer evince gimp
+
+### Scientific
+python-numpy python-scipy python-matplotlib
+ipython python-pandas python-sympy python-nose
+r-base r-base-dev
+
+### Development and Demos
+libdrm-dev libasound2-dev libx11-dev libncurses-dev libssl-dev
+libfluidsynth-dev fluidsynth fluid-soundfont-gm
+glade libgtk-3-dev meld geany
+
+### Camera
+camorama guvcview
+
+### Screen sharing
+tightvncserver
+
+### Other
+openvpn
+synergy
+vlc
+

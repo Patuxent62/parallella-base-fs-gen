@@ -1,0 +1,457 @@
+---------------------------------
+# Patuxent-Parallella 2021.1 beta
+---------------------------------
+
+-This repo supports patuxent-parallella image construction from basic components
+git@github.com:Patuxent62/parabuntu.git
+
+## Notes
+-Note: This is currently only for 7010 HDMI Desktop with mods for GPIO from Epiphany Cores
+-Note: BrownDeer COPRTHR is broken and is not included in this image
+-Note: Unlike the goal of the Parallella 2019.1 repo, this is currently not fully automated.
+-Note: Qemu is used to build the armhf cross-platform filesystem in a chroot.
+       Use of parallella hardware to complete the image construction is not required.
+
+
+## Required gparted partitions (assumes a minimum 16 GB SD card, although an 8 GB card will do)
+Partition	File System	Mount Point	Label		Size		Flags
+/dev/mmcblk0p1	fat16		/boot		BOOT		100.0 MiB	boot
+/dev/mmcblk0p2	ext4		/				14.5 GiB
+
+
+## Base Linux OS filesystem component source
+Ubuntu 18.04.5
+from: http://cdimage.ubuntu.com/ubuntu-base/releases/18.04.5/release/ubuntu-base-18.04.5-base-armhf.tar.gz
+ubuntu-base-18.04.5-base-armhf.tar.gz
+
+## Image components in this repo are custom patuxent-parallella versions listed below:
+Component		Source Repo						Comments
+ADI Kernel Image	git@github.com:Patuxent62/parallella-linux.git		Based on ADI 4.19.0
+										with modified ephiphany driver
+										and xilinx support
+
+devicetree.dtb		git@github.com:Patuxent62/parallella-linux.git		Updated to fix HDMI video,
+(devicetree-2021-01.dtb, devicetree-2021-01.dts)				sound, and misc boot issues
+
+parallella.bit.bin	git@github.com:Patuxent62/oh.git			Modified FPGA design for latest ADI
+(parallella_e16_hdmi_egpio_7010.bit.bin)					HDMI IP and added support for GPIO
+										accessibility from epiphany cores via AXI
+
+epiphany sdk		git@github.com:Patuxent62/epiphany-sdk.git		Added extra debugging output to the SDK
+and toolchain 
+(/opt/adapteva/ filesystem branch)
+
+
+--------------------------------------------------
+# Patuxent-Parallella Ubuntu Image Creation (2021)
+--------------------------------------------------
+
+## Prequisite:
+-Configure an Ubuntu 18.04.05 LTS system for patuxent-parallella Dev (amd64 system) according to:
+Ubuntu Dev Env-Parallella-2021-01.txt
+
+-Script above is for an ESXI VM build, but can be adapted to a VirtualBox or bare metal build
+
+
+## Image creation steps from Ubuntu Base FS
+
+- Note: lines below starting with # that are to be copied to the config are prefaced with ' 
+        to avoid markdown interpretation. Remove the ' character at the beginning of those lines
+        when copying into the config.
+
+1) Log in to the dev machine bash shell as 'dev' via gui or SSH and change to root
+
+su
+cd ~
+
+
+2) From a bash shell, clean target directories and unzip the patuxent-parallella-fsgen.tar.gz file
+
+-Cleanup any previous build target, if any
+rm -R /patuxent-parallella
+
+-Establish build target directory
+mkdir -p /patuxent-parallella/mnt/boot/
+mkdir -p /patuxent-parallella/mnt/rootfs/
+chown -R root:root /patuxent-parallella/mnt
+chmod -R 775 /patuxent-parallella/mnt
+
+-Cleanup any previous fs build package, if any, and unzip
+rm -R base-fs-gen
+
+-SCP/Copy filesystem generation archive patuxent-parallella-fsgen.tar.gz to ~/
+tar -zxvpf patuxent-parallella-fsgen.tar.gz
+
+-Alternatively, copy the "parabuntu" project from the patuxent-paralallella git repo to ~/ and rename
+mv parabuntu base-fs-gen
+
+chown -R root:root base-fs-gen
+
+
+3) From the build overlay directory, download the base Ubuntu filesystem image
+
+cd ~/base-fs-gen
+wget http://cdimage.ubuntu.com/ubuntu-base/releases/18.04.5/release/ubuntu-base-18.04.5-base-armhf.tar.gz
+
+
+4) From the build overlay directory, copy files to the boot and rootfs directories
+
+cp fpga-bitfiles/parallella_e16_hdmi_egpio_7010.bit.bin /patuxent-parallella/mnt/boot/parallella.bit.bin
+cp kernel-files/kernupdate-2021-R01/uImage /patuxent-parallella/mnt/boot/
+cp kernel-files/devicetree-2021-01.dtb /patuxent-parallella/mnt/boot/devicetree.dtb
+
+tar --same-owner -zxvpf ubuntu-base-18.04.5-base-armhf.tar.gz -C /patuxent-parallella/mnt/rootfs/
+cp -R kernel-files/kernupdate-2021-R01/lib /patuxent-parallella/mnt/rootfs/
+
+
+5) Confirm schroot config and prep rootfs for emulation
+
+cp -R /etc/schroot/desktop /etc/schroot/parallella
+
+nano /etc/schroot/parallella/nssdatabases
+-Modify to comment out the following
+'# System databases to copy into the chroot from the host system.
+'#
+'# <database name>
+'#passwd
+'#shadow
+'#group
+'#gshadow
+'#services
+'#protocols
+'#networks
+'#hosts
+-Save and exit Nano
+
+nano /etc/schroot/parallella/copyfiles
+-Modify to comment out the following
+'# Files to copy into the chroot from the host system.
+'#
+'# <source and destination>
+'#/etc/resolv.conf
+-Save and exit Nano
+
+nano /etc/schroot/schroot.conf
+-Add/edit the following text to the end of the file
+-Edit the directory path to correspond to your absolute root fs target directory
+-This directory must be outside of the devbox build user profile
+-Edit the users and root-users to correspond to your devbox build user
+
+[patuxent-parallella]
+description=Patuxent parallella rootfs dev
+aliases=parallella
+type=directory
+directory=/patuxent-parallella/mnt/rootfs
+users=root,dev
+root-users=root,dev
+profile=parallella
+personality=linux32
+
+-Save and exit nano
+
+
+6) Copy file overlays into root fs from the build overlay directory
+
+-Copy over qemu emulator for arm
+cp /usr/bin/qemu-arm-static /patuxent-parallella/mnt/rootfs/usr/bin/
+chmod 755 /patuxent-parallella/mnt/rootfs/usr/bin/qemu-arm-static
+chown root:root /patuxent-parallella/mnt/rootfs/usr/bin/qemu-arm-static
+
+-Copy over all filesystem overlays not in home directory
+mkdir -p /patuxent-parallella/mnt/rootfs/home/parallella
+rsync -ap overlays/esdk-master/* /patuxent-parallella/mnt/rootfs/
+rsync -ap overlays/parallella-cfg/* /patuxent-parallella/mnt/rootfs/
+rsync -ap overlays/ompi-2.0.0/* /patuxent-parallella/mnt/rootfs/
+rsync -ap overlays/epython/* /patuxent-parallella/mnt/rootfs/
+rsync -ap overlays/perf/* /patuxent-parallella/mnt/rootfs/
+rsync -ap overlays/thermald/* /patuxent-parallella/mnt/rootfs/
+
+-Copy over scripts for additional packages
+cp -R scripts /patuxent-parallella/mnt/rootfs/root/
+
+
+7) Run setup scripts
+
+-Get rid of all .gitkeep files
+find /patuxent-parallella/mnt/rootfs -name ".gitkeep" -delete
+
+-Enable devtmpfs and make SD card accessible from Parallella
+./scripts/10-create-device-files.sh /patuxent-parallella/mnt/rootfs
+
+
+8) Peform schroot as root into /home/dev/Documents/base-fs-gen/mnt/rootfs/
+
+cd /
+schroot -c parallella -u root
+
+
+9) From parallella chroot, issue various fixups
+
+apt-get update
+apt-get install -yy rsyslog dialog
+apt-get install -yy debconf-utils apt-utils
+
+-Fixing zoneinfo so the interactive prompt won't pop up while installing packages
+ln -fs /usr/share/zoneinfo/US/Eastern /etc/localtime
+apt-get install -yy tzdata
+dpkg-reconfigure -f noninteractive tzdata
+
+-Install dhcp client keeping our dhcp config
+touch /etc/dhcp/dhclient.conf
+apt-get install -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" --force-yes -yy isc-dhcp-client isc-dhcp-common
+
+
+10) From parallella chroot, perform basic update
+
+apt-get install -yy multiarch-support
+apt-get update -yy || true
+apt-get dist-upgrade -yy
+apt-get upgrade -yy
+apt-get install -yy ssh fake-hwclock ntp
+
+
+11) From parallella chroot, install more basic packages
+
+cd ~/
+./scripts/30-install-chroot.sh ./scripts/packages.headless.txt
+
+apt-get clean
+
+
+12) From parallella chroot, make default dev and parallella user accounts (to be performed in order so UIDs match)
+
+-Set bash to default shell
+echo "dash dash/sh boolean false" | debconf-set-selections
+DEBIAN_FRONTEND=noninteractive dpkg-reconfigure dash
+
+useradd parallella
+addgroup parallella adm
+addgroup parallella sudo
+echo parallella:parallella | chpasswd
+
+nano /etc/passwd
+
+-Change /bin/sh to /bin/bash as the default shell for the new accounts above
+-Save and exit nano
+
+
+13) From parallella chroot, setup networking and host name
+
+nano /etc/network/interfaces.d/eth0
+-Confirm (or modify) to the following contents
+
+auto eth0
+iface eth0 inet dhcp
+
+-Save and exit nano
+
+nano /etc/systemd/resolved.conf
+-Modify the file to the following contents
+
+[Resolve]
+DNS=8.8.8.8
+FallbackDNS=8.8.4.4
+LLMNR=no
+MulticastDNS=no
+DNSSEC=no
+Cache=yes
+DNSStubListener=yes
+
+-Save and exit nano
+
+nano /etc/hosts
+-Confirm (or modify) to the following contents
+
+127.0.0.1       localhost
+::1             localhost ip6-localhost ip6-loopback
+fe00::0         ip6-localnet
+ff00::0         ip6-mcastprefix
+ff02::1         ip6-allnodes
+ff02::2         ip6-allrouters
+127.0.1.1       parallella
+
+-Save and exit nano
+
+nano /etc/hostname
+-Confirm (or modify) to the following contents
+
+parallella
+
+-Save and exit nano
+
+
+14) Exit the chroot and perform final home directory overlays as root
+
+exit
+-Should still be root, if not then su
+cd ~/base-fs-gen
+
+-Copy over parallella home directory overlays
+rsync -ap overlays/parallella-home/* /patuxent-parallella/mnt/rootfs/
+-Copy over parallella examples
+cp -R examples/* /patuxent-parallella/mnt/rootfs/home/parallella/
+
+-Set final ownership of parallella home directory
+chown -R parallella:parallella /patuxent-parallella/mnt/rootfs/home/parallella
+
+
+14) If this is going to be a headless image, skip the following by proceeding to step (17)
+
+
+15) From parallella chroot, execute an automated install of the desktop packages
+
+cd /
+schroot -c parallella -u root
+
+cd ~/
+./scripts/30-install-chroot.sh ./scripts/packages.additional.desktop.txt
+
+
+16) From parallella chroot, edit the xorg.conf file
+
+nano /etc/X11/xorg.conf
+-Replace/Edit the config with the following:
+
+Section "Device"
+  Identifier "Card0"
+  Driver "modesetting"
+  Option "ShadowFB" "True"
+  Option "SWCursor" "True"
+  Option "HWCursor" "False"
+EndSection
+Section "Screen"
+  Identifier "Screen0"
+  Device "Card0"
+  SubSection "Display"
+'#---- Uncomment your preferred mode ----
+'    #Modes "1920x1080"
+'    #Modes "1600x1200"
+    Modes "1600x900"
+'    #Modes "1280x1024"
+'    #Modes "1152x864"
+'    #Modes "1280x720"
+'    #Modes "1024x768"
+'    #Modes "800x600"
+'    #Modes "720x576"
+'    #Modes "720x480"
+'    #Modes "720x400"
+'    #Modes "640x480"
+  EndSubSection
+EndSection
+Section "ServerFlags"
+  Option "AllowEmptyInput" "yes"
+EndSection
+
+-Save and exit nano
+
+
+17) From parallella chroot, perform final cleanup
+
+-Remove chroot BASH prompt
+rm /etc/debian_chroot
+
+-Remove SSH key
+rm -fr /etc/ssh/*key*
+
+nano /etc/rc.local
+
+-Verify that this line is present in mnt/rootfs/etc/rc.local
+test -f /etc/ssh/ssh_host_dsa_key || dpkg-reconfigure openssh-server
+
+-Save and exit nano
+
+-Cleanup log files
+> /var/log/bootstrap.log
+> /var/log/alternatives.log
+> /var/log/faillog
+> /var/log/lastlog
+> /var/log/tallylog
+> /var/log/kern.log
+> /var/log/syslog
+
+
+18) Exit schroot and create boot and fs archives
+
+exit
+cd /patuxent-parallella/mnt
+tar -cvzf part.boot.tar.gz boot/
+tar -cvzf part.rootfs.tar.gz rootfs/
+exit
+
+-Copy these files to a computer that is capable of mounting the SD card
+-This computer should run a bare metal Linux boot or Linux live CD
+-If running a linux live CD the partition archives can be copies to an NTFS partition
+
+
+19) Create SD card
+
+-Insert the SD card in a computer to perform the SD filesystem setup and copying
+-An SD card of 16 Gb or more is required here, although an 8 Gb card will work with modification
+-Login to a bare metal linux boot or utilize a Linux Liveboot that detects the SD card reader
+-For example, a SystemRescue 7.01 live CD works for an HP Envy Notebook running Windows 10
+
+-Login as root
+su
+cd ~
+
+-SFTP the partition archives to /root, or mount a Windows NTFS partition from the live CD and copy from there:
+a) Boot partition archive: part.boot.tar.gz
+b) Root partition archive: part.rootfs.tar.gz
+
+-Confirm which device name corresponds to the mounted SD card
+lsblk
+
+-Use gparted to create the following partitions:
+-In this example /dev/mmcblk0 is used as the SD card
+
+gparted
+
+-Create the following primary partitions:
+Partition	Start (MiB)	Size (MiB)	File System	Mount Point	Label		Size		Flags
+/dev/mmcblk0p1	1		100		fat16		/boot		BOOT		100.0 MiB	boot
+/dev/mmcblk0p2	101*		14500		ext4		/		root		14.5 GiB
+	(*no freespace before)
+
+-Exit gparted and mount the sd card partitions
+
+mkdir -p ~/mnt/src
+mkdir -p ~/mnt/boot
+mkdir -p ~/mnt/rootfs
+
+- Note: ntfs mount source partition device id below will vary based on host filesystem config
+mount -t ntfs -v /dev/sda4 ~/mnt/src
+mount -t vfat -v /dev/mmcblk0p1 ~/mnt/boot
+mount -t ext4 -v /dev/mmcblk0p2 ~/mnt/rootfs
+chmod -R 777 mnt/boot
+
+-Copy the source archives
+- Note: source path listed below for file copies will vary based on location of files in host filesystem
+cp 'mnt/src/Software Projects/Parallella/aaaCJR-7010-HDMI-EGPIO-2021-Base/part.rootfs.tar.gz' ~/
+cp 'mnt/src/Software Projects/Parallella/aaaCJR-7010-HDMI-EGPIO-2021-Base/part.boot.tar.gz' ~/
+umount ~/mnt/src
+
+-Copy the image files to each partition
+
+cd ~
+mkdir ~/bootextr
+tar --strip-components 1 -zxvf ~/part.boot.tar.gz -C ~/bootextr/
+chmod 777 bootextr/uImage
+chmod 666 bootextr/devicetree.dtb
+chmod 666 bootextr/parallella.bit.bin
+
+cp ~/bootextr/* ~/mnt/boot
+
+tar --same-owner --strip-components 1 -zxvpf ~/part.rootfs.tar.gz -C ~/mnt/rootfs/
+
+sync
+umount ~/mnt/boot
+umount ~/mnt/rootfs
+exit
+
+-Remove the SD card. It is ready for use in the parallella
+-Log in with:
+user: parallella
+pass: parallella
+
+-Further custom network and hostname setup is recommended from the parallella console
+

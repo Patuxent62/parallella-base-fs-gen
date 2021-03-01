@@ -1,0 +1,131 @@
+Parallella image changes
+
+Changelog for patuxent-parallella 2021.01 (beta)
+-The starting point for this build is the 2019.1 beta build by Ola Jeppsson
+
+-This build is based on the standard Ubuntu Bionic Beaver 18.04.5 core fs, not linaro
+
+-All image resource files were updated to include the patuxent-parallella modified
+ versions of the files (Ephiphany-SDK, ADI Kernel, devicetree.dtb, parallella.bit.bin)
+
+-The updated resource files fix issues with HDMI support and sound support in the
+ 2019.01 beta version
+
+-The updated resource files split EMIO GPIO pin control between ARM processors and the
+ epiphany cores. GPIO Pins GN0,GP0 to GN8, GP8 can now be controlled from epiphany, GPIO Pins
+ GN9, GP9 to GN11, GP11 can still be controlled from the ARM processors.
+
+-Currently, this build only supports the standard desktop version of the parallella
+ (Xilinx Zynq 7010 with HDMI support)
+
+-The script and framework for the overall automation of the build was removed. This
+ version uses a manual build sequence described in README.manual.md
+
+-This build sequence is modified to use qemu and schroot to fully cross-build the root
+ filesystem with no requirement to perform any build steps on actual parallella hardware
+
+-The list of base packages installed has been pruned and updated to reduce apt warnings during the
+ build. If only the base packages are installed, a full-function headless image can be realized.
+
+-To provide X support, a second list of desktop packages are installed.
+
+-Both lists of packages are now installed using a script from chroot instead of a complex command
+
+-Support for Brown Deer COPRTHR remains broken and has been removed from this image build
+
+-The e-gdb tool was discovered as broken in the 2019.1 version and currently remains broken
+ in this image build. This may change in the future.
+
+
+Changelog for 2019.1 version
+No updates were added to this file in the 2019.1 branch of the
+github parallella repo: https://github.com/parallella/parabuntu.git
+
+
+ChangeLog between 2014.11 and 2015.1 images
+
+set hostname to parallella in
+hostname
+hosts
+
+change user name to parallella
+mv /home/linaro /home/parallella
+change user password
+usermod -R mnt/root -u parallella -p parallella
+
+fix dhcp lease fallback
+
+copy thermald parallella-thermald.conf to appropriate places
+
+new bootfs
+
+copy new esdk /opt/adapteva
+rm /home/linaro/softcache
+fix branch for epiphany-examples
+pull parallella-examples
+
+see qemu note on how to mount proc and rootfs and change dir etc
+usermod -l parallella -d  /home/parallella -m linaro
+passwd -p parallella parallella
+
+need to change name too in /etc/passwd
+need to change group too
+
+edit /etc/apt/sources.list
+
+
+edit /etc/resolv.conf google nameserver
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+
+
+# Linaro Overlay PPA
+deb http://ppa.launchpad.net/linaro-maintainers/overlay/ubuntu trusty main
+deb-src http://ppa.launchpad.net/linaro-maintainers/overlay/ubuntu trusty main
+
+parallella ppa repo
+http://www.parallella.org/forums/viewtopic.php?t=1466&p=9704
+
+/etc/apt/sources.d/parallella.list
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 39A6ED25
+
+clean /var/log* /var/cache and friends
+
+install libx11 and libx11-dev (remote ssh -Y support)
+
+!!!redo md5sum.txt
+scripts/99-redo-md5sum.txt
+
+rm -rf /etc/ssh/ssh_host*
+
+
+install i2c-tools
+
+sudo apt-get install ocl-icd-dev ocl-icd-opencl-dev clinfo libclc-dev
+opencl-headers
+ sudo apt-get install libelfg0 libelfg0-dev
+
+ install coprthr
+ setup coprthr in .bashrc
+ export LD_LIBRARY_PATH=/opt/browndeer/coprthr/lib:$LD_LIBRARY_PATH
+ export PATH=/opt/browndeer/coprthr/bin:$PATH
+ export MANPATH=...
+
+ !!!redo md5sum.txt
+
+
+ Already fixed???
+ W: GPG error: http://ppa.launchpad.net trusty Release: The following
+ signatures couldn't be verified because the public key is not available:
+ NO_PUBKEY 8ACD4DBB39A6ED25
+ add updates to repos.list
+ deb http://ports.ubuntu.com/ubuntu-ports/ trusty-security main universe
+
+ 2015.01.30
+ fix serial terminal
+ prune linaro-overlay-minimal
+ install old version 2014.3 ??
+
+ Disable linaro apt repository (newer version of overlay depends on newer base
+ images (systemd) and breaks serial console)
+ /etc/apt/sources.d/linaro-overlay

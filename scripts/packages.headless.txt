@@ -1,0 +1,88 @@
+#Basic
+bash tcsh man-db info less
+ftp synaptic screen tmux bc htop
+lsb-release
+lm-sensors
+
+##init system
+systemd udev 
+
+sudo
+
+##Fix debconf: unable to initialize frontend: Dialog
+#dialog   # Moved to first steps of basic install script
+
+# Language Packs (Fix utf8 & get rid of Ubuntu's annoying locale warings)
+language-pack-en
+
+# Editors
+vim-nox emacs-nox nano
+
+# Debian packaging
+devscripts
+dpkg-dev
+
+# Compiling/building
+build-essential
+git
+curl
+m4
+flex
+bison
+gawk
+pkg-config
+strace
+texinfo
+gdb
+
+### Networking
+ethtool
+iperf
+ifplugd
+bwm-ng
+nfs-common
+net-tools
+iputils-ping
+iputils-arping
+traceroute
+
+
+### Linux Tools
+device-tree-compiler
+usbutils
+
+### Wifi
+linux-firmware
+
+### Packages for Epiphany SDK
+libmpfr-dev libmpc-dev libgmp3-dev
+
+### For epiphany examples
+libdevil-dev
+libdevil1c2
+libfftw3-3
+libfftw3-dev
+
+### Packages for browndeer coprthr
+# Source packages
+#ocl-icd-dev
+#ocl-icd-opencl-dev
+#clinfo
+#libclc-dev
+#opencl-headers
+##https://superuser.com/questions/1091984/how-to-install-libelfg0-dev-on-ubuntu-16-04-lts-64bit-version
+libelf1
+#libelf-dev -- conflict
+'libconfig++9v5' 'libconfig++-dev' libconfig-dev libconfig9
+libevent-2.1.6 libevent-dev
+
+# Needed for parallella-utils xtemp
+#libx11-6   # Moved to script for desktop version
+#libx11-dev # Moved to script for desktop version
+i2c-tools
+
+# OpenMPI
+libopenmpi-dev
+libopenmpi2
+openmpi-bin
+openmpi-common
