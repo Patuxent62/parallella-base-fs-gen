@@ -110,25 +110,25 @@ cp -R /etc/schroot/desktop /etc/schroot/parallella
 
 nano /etc/schroot/parallella/nssdatabases
 -Modify to comment out the following
-'# System databases to copy into the chroot from the host system.
-'#
-'# <database name>
-'#passwd
-'#shadow
-'#group
-'#gshadow
-'#services
-'#protocols
-'#networks
-'#hosts
+# System databases to copy into the chroot from the host system.
+#
+# <database name>
+#passwd
+#shadow
+#group
+#gshadow
+#services
+#protocols
+#networks
+#hosts
 -Save and exit Nano
 
 nano /etc/schroot/parallella/copyfiles
 -Modify to comment out the following
-'# Files to copy into the chroot from the host system.
-'#
-'# <source and destination>
-'#/etc/resolv.conf
+# Files to copy into the chroot from the host system.
+#
+# <source and destination>
+#/etc/resolv.conf
 -Save and exit Nano
 
 nano /etc/schroot/schroot.conf
@@ -323,19 +323,19 @@ Section "Screen"
   Identifier "Screen0"
   Device "Card0"
   SubSection "Display"
-'#---- Uncomment your preferred mode ----
-'    #Modes "1920x1080"
-'    #Modes "1600x1200"
+#---- Uncomment your preferred mode ----
+    #Modes "1920x1080"
+    #Modes "1600x1200"
     Modes "1600x900"
-'    #Modes "1280x1024"
-'    #Modes "1152x864"
-'    #Modes "1280x720"
-'    #Modes "1024x768"
-'    #Modes "800x600"
-'    #Modes "720x576"
-'    #Modes "720x480"
-'    #Modes "720x400"
-'    #Modes "640x480"
+    #Modes "1280x1024"
+    #Modes "1152x864"
+    #Modes "1280x720"
+    #Modes "1024x768"
+    #Modes "800x600"
+    #Modes "720x576"
+    #Modes "720x480"
+    #Modes "720x400"
+    #Modes "640x480"
   EndSubSection
 EndSection
 Section "ServerFlags"
