@@ -3,7 +3,7 @@
 ---------------------------------
 
 -This repo supports patuxent-parallella image construction from basic components
-git@github.com:Patuxent62/parabuntu.git
+git@github.com:Patuxent62/parallella-base-fs-gen.git
 
 ## Notes
 -Note: This is currently only for 7010 HDMI Desktop with mods for GPIO from Epiphany Cores
@@ -55,17 +55,13 @@ Ubuntu Dev Env-Parallella-2021-01.txt
 
 ## Image creation steps from Ubuntu Base FS
 
-- Note: lines below starting with # that are to be copied to the config are prefaced with ' 
-        to avoid markdown interpretation. Remove the ' character at the beginning of those lines
-        when copying into the config.
-
 1) Log in to the dev machine bash shell as 'dev' via gui or SSH and change to root
 
 su
 cd ~
 
 
-2) From a bash shell, clean target directories and unzip the patuxent-parallella-fsgen.tar.gz file
+2) From a bash shell, clean target directories and setup the build directories
 
 -Cleanup any previous build target, if any
 rm -R /patuxent-parallella
@@ -88,13 +84,13 @@ mv parabuntu base-fs-gen
 chown -R root:root base-fs-gen
 
 
-3) From the build overlay directory, download the base Ubuntu filesystem image
+3) From the build directory, download the base Ubuntu filesystem image
 
 cd ~/base-fs-gen
 wget http://cdimage.ubuntu.com/ubuntu-base/releases/18.04.5/release/ubuntu-base-18.04.5-base-armhf.tar.gz
 
 
-4) From the build overlay directory, copy files to the boot and rootfs directories
+4) From the build directory, copy files to the boot and rootfs target directories
 
 cp fpga-bitfiles/parallella_e16_hdmi_egpio_7010.bit.bin /patuxent-parallella/mnt/boot/parallella.bit.bin
 cp kernel-files/kernupdate-2021-R01/uImage /patuxent-parallella/mnt/boot/
