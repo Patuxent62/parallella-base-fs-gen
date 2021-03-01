@@ -26,11 +26,16 @@ git@github.com:Patuxent62/parallella-base-fs-gen.git
 
 ## Base Linux OS filesystem component source
 
-Ubuntu 18.04.5
-from: http://cdimage.ubuntu.com/ubuntu-base/releases/18.04.5/release/ubuntu-base-18.04.5-base-armhf.tar.gz
-ubuntu-base-18.04.5-base-armhf.tar.gz
+- Ubuntu 18.04.5 from:
 
-## Image components in this repo are custom patuxent-parallella versions listed below:
+http://cdimage.ubuntu.com/ubuntu-base/releases/18.04.5/release/ubuntu-base-18.04.5-base-armhf.tar.gz
+
+- ubuntu-base-18.04.5-base-armhf.tar.gz
+
+
+## Image Components Summary:
+
+- Image components in this repo are custom patuxent-parallella versions listed below:
 
 | Component | Source Repo | Comments |
 | :--------------------------------- | :--------------------------------------------- | :-------------------------------------- |
@@ -46,11 +51,14 @@ ubuntu-base-18.04.5-base-armhf.tar.gz
 
 ## Prequisite:
 
--Configure an Ubuntu 18.04.05 LTS system for patuxent-parallella Dev (amd64 system) according to:
-Ubuntu Dev Env-Parallella-2021-01.txt
+- Configure an Ubuntu 18.04.05 LTS system for patuxent-parallella Dev (amd64 system) according to:
+
+ubuntu-devbox-parallella-2021-01.txt
 
 
 ## Instructions/Script for this Repo
 
-See the file  build-manual.txt  for instructions.
+- For image build instructions, see the file:
+
+build-manual.txt
 

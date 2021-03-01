@@ -1,0 +1,348 @@
+1) Install Ubuntu 18.04.5 LTS VM (Bionic Beaver)
+
+-Configure VM (VMWare ESXI 6.0)
+	Ubuntu (64-Bit)
+	Processors: 4 or more
+	Memory:	>= 8192 MB
+	Storage: SCSI (0,0), 110 GB, Thick Provision Lazy Zero
+	Video: 1 display, 64 MB memory, Enable 3d support
+	Net Adapter: VMXNET3 -> VM Network
+
+-Load VM image from:
+ubuntu-18.04.5-desktop-amd64.iso
+
+
+2) Install and update
+
+-Set initial user account as "parallella"
+-Set up second user account as "dev"
+
+sudo adduser dev
+sudo usermod -aG sudo dev
+sudo usermod -aG adm dev
+sudo usermod -aG cdrom dev
+sudo usermod -aG dip dev
+sudo usermod -aG plugdev dev
+sudo usermod -aG lpadmin dev
+sudo usermod -aG sambashare dev
+
+-Update and reboot
+-Log in as "dev"
+
+
+3) Setup Network Connections
+
+-Use static IP
+-Configure Internet access
+
+
+4) Install vmware tools and ssh:
+
+sudo apt-get update
+sudo apt-get install open-vm-tools open-vm-tools-desktop ssh net-tools
+sudo apt-get purge vino
+
+
+5) Set Up shared folder permissions, remote access, and root password
+
+-fstab entry example for NAS:
+
+sudo mkdir /mnt/nas-shared
+sudo chmod 666 /mnt/nas-shared
+sudo nano /etc/fstab
+-Add the following line to end of file
+
+//<your IP>\<your share> /mnt/nas-shared cifs uid=1000,rw,suid,username=<NAS username>,password=<NAS password> 0 0
+
+-save and exit nano
+sudo mount -av
+
+-Set root password
+
+sudo passwd root
+-Enter and confirm root password
+
+
+6) Install tigervnc server
+
+sudo apt-get install tigervnc-standalone-server tigervnc-common tigervnc-viewer
+
+vncserver
+-Enter password
+
+vncserver -kill :*
+
+
+7) Setup vnc startup environment
+
+nano ~/.vnc/xstartup
+
+-Enter the following
+
+#!/bin/sh
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+export XKL_XMODMAP_DISABLE=1
+
+exec /etc/X11/xinit/xinitrc
+dbus-launch --exit-with-session gnome-session &
+
+[ -x /etc/vnc/xstartup ] && exec /etc/vnc/xstartup
+[ -r $HOME/.Xresources ] && xrdb $HOME/.Xresources
+vncconfig -iconic &
+
+-Save and exit nano
+
+
+8) Start the server from the user shell
+
+vncserver -localhost no -geometry 1920x1080 -depth 24
+
+-Test vnc viewer connection
+Note: If the colors are incorrect, change the picture quality option for the vnc viewer profile to be "High"
+  
+
+9) Create the automated vnc service startup script
+
+sudo nano ~/.profile
+-Add the following text to the end of the file:
+
+if [[ $- == *i* ]]; then
+	SERVICE="Xtigervnc"
+	if pgrep -x "$SERVICE" >/dev/null; then
+		echo "$SERVICE is running"
+	else
+		echo "Starting $SERVICE"
+		vncserver -localhost no -geometry 1920x1080 -depth 24
+	fi
+fi
+
+-Save and exit Nano
+
+
+10) Create the manual vnc service start/stop scripts
+
+sudo nano ~/vnc-man-start.sh
+-Add the following text to the file:
+
+#!/bin/bash
+
+SERVICE="Xtigervnc"
+if pgrep -x "$SERVICE" >/dev/null; then
+    echo "$SERVICE is running"
+else
+    echo "Starting $SERVICE"
+    vncserver -localhost no -geometry 1920x1080 -depth 24
+fi
+
+-Save and exit Nano
+sudo chmod 775 ~/vnc-man-start.sh
+
+sudo nano ~/vnc-man-stop.sh
+-Add the following text to the file:
+
+#!/bin/bash
+vncserver -kill :*
+
+-Save and exit Nano
+sudo chmod 775 ~/vnc-man-stop.sh
+
+
+11) Download and install Xilinx Vivado 2019.2
+
+mkdir ~/vivado-setup
+
+-Download Xilinx Vivado WebPack 2019.2 universal install package to ~/vivado-setup from either NAS or web
+
+-Uncompress
+cd ~/vivado-setup
+tar -xvf Xilinx_Vivado_2019.2_1106_2127.tar.gz
+
+cd Xilinx_Vivado_2019.2_1106_2127
+sudo ./xsetup
+
+-Follow install wizard
+
+
+12) Open a terminal and source this file: 
+
+source /tools/Xilinx/Vivado/2019.2/settings64.sh
+
+
+13) Add it to both root bashrc file and your bashrc so it’s run each time you launch a terminal.
+
+--- User Profile ---
+
+cd ~/
+nano ~/.bashrc
+
+- add to end of file:
+
+source /tools/Xilinx/Vivado/2019.2/settings64.sh
+
+- save and exit
+
+--- root Profile ---
+
+su
+cd ~/
+nano ~/.bashrc
+
+- add to end of file:
+
+source /tools/Xilinx/Vivado/2019.2/settings64.sh
+
+- save and exit
+- exit su
+
+
+14) Make a directory for projects.
+
+source /tools/Xilinx/Vivado/2019.2/settings64.sh
+mkdir ~/Documents/vivado
+
+
+15) Execute the following:
+
+sudo chmod 777 -R /tools/Xilinx/
+sudo chmod 777 -R ~/.Xilinx/
+sudo chown dev:dev -R ~/.Xilinx
+
+
+16) Create the vivado startup file
+
+cd ~/
+nano ~/vivado_start.sh
+
+- add:
+
+#!/bin/bash
+
+cd ~/Documents/vivado
+source /tools/Xilinx/Vivado/2019.2/settings64.sh
+nohup vivado >/dev/null 2>&1 &
+sleep 10
+
+- save and exit
+
+sudo chmod 777 ~/vivado_start.sh
+sudo chown dev:dev ~/vivado_start.sh
+
+
+17) Create desktop icon
+
+sudo nano ~/Desktop/vivado.desktop
+
+-Add the following text
+
+[Desktop Entry]
+Name=Vivado
+Comment=Vivado IDE
+Exec=/home/dev/vivado_start.sh
+Icon=/tools/Xilinx/Vivado/2019.2/common/icons/CS1056_Vivado_HSL_Icon_64x64.png
+Type=Application
+
+-Save and exit nano
+
+sudo chmod 777 ~/Desktop/vivado.desktop
+sudo chown dev:dev ~/Desktop/vivado.desktop
+
+-Double click desktop item
+-Select "Trust and Launch"
+
+cp ~/Desktop/vivado.desktop ~/.local/share/applications
+
+
+18) Install other Parallella tools
+
+sudo apt-get update
+sudo apt-get install libncurses-dev build-essential bison flex libssl-dev bc libelf-dev u-boot-tools libc6-armel-cross libc6-dev-armel-cross binutils-arm-linux-gnueabi
+sudo apt-get install libgmp3-dev libmpc-dev libmpfr-dev xzip lzip zip zerofree fakeroot debootstrap schroot qemu binfmt-support qemu-user-static texinfo autoconf
+sudo apt-get install libtool gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf device-tree-compiler
+sudo apt-get install verilog iverilog gtkwave geany meld codeblocks git git-lfs gparted rsync
+
+
+19) Build and install guile 1.8
+
+-Get rid of version from distro (if installed)
+sudo apt-get purge guile-2.0
+
+-Install dependencies
+sudo apt-get install --no-install-recommends automake debhelper dh-autoreconf libgmp-dev libltdl-dev libncurses5-dev libreadline-dev
+
+-Download guile-1.8.8
+
+cd ~
+wget https://ftp.gnu.org/gnu/guile/guile-1.8.8.tar.gz
+tar -xzvf guile-1.8.8.tar.gz
+
+-Build/install guile-1.8.8
+
+cd guile-1.8.8
+./configure --disable-dependency-tracking --enable-error-on-warning=no
+make
+sudo make install
+
+
+20) Set up schroot config and prep rootfs directories for parallella filesystem build
+
+sudo mkdir -p /patuxent-parallella/mnt/boot/
+sudo mkdir -p /patuxent-parallella/mnt/rootfs/
+sudo chown -R root:root /patuxent-parallella/mnt
+sudo chmod -R 775 /patuxent-parallella/mnt
+
+sudo cp -R /etc/schroot/desktop /etc/schroot/parallella
+
+sudo nano /etc/schroot/parallella/nssdatabases
+-Modify to comment out the following
+# System databases to copy into the chroot from the host system.
+#
+# <database name>
+#passwd
+#shadow
+#group
+#gshadow
+#services
+#protocols
+#networks
+#hosts
+-Save and exit Nano
+
+sudo nano /etc/schroot/parallella/copyfiles
+-Modify to comment out the following
+# Files to copy into the chroot from the host system.
+#
+# <source and destination>
+#/etc/resolv.conf
+-Save and exit Nano
+
+sudo nano /etc/schroot/schroot.conf
+-Add/edit the following text to the end of the file
+-Edit the directory path to correspond to your absolute root fs target directory
+-This directory must be outside of the devbox build user profile
+-Edit the users and root-users to correspond to your devbox build user
+
+[patuxent-parallella]
+description=Patuxent parallella rootfs dev
+aliases=parallella
+type=directory
+directory=/patuxent-parallella/mnt/rootfs
+users=root,dev
+root-users=root,dev
+profile=parallella
+personality=linux32
+
+-Save and exit nano
+
+
+21) Set environment variables for Epiphany SDK development
+
+nano ~/.profile
+
+export EPIPHANY_BUILD_HOME="~/Documents/sdk-dev/epiphany-sdk-master"
+export ESDK_MASTER=${EPIPHANY_BUILD_HOME}/esdk.master/opt/adapteva/esdk.master
+export PATH=${ESDK_MASTER}:${ESDK_MASTER}/tools/e-gnu/bin:${ESDK_MASTER}/tools/host/bin:$PATH
+export MANPATH=${ESDK_MASTER}/tools/e-gnu/share/man:$MANPATH
+
+-Save and exit Nano
+
